@@ -19,14 +19,14 @@ type (
 		MaxRetries int `json:"max_retries"`
 	}
 
-	RedisNode struct {
+	Node struct {
 		*redis.Client
 	}
-	RedisNodes []RedisNode
+	Nodes []Node
 )
 
-func MustNew(ctx context.Context, c *Config) RedisNodes {
-	nodes, err := NewNodes(ctx, c)
+func MustNew(ctx context.Context, c *Config) Nodes {
+	nodes, err := New(ctx, c)
 	if err != nil {
 		panic(err)
 	}
@@ -34,13 +34,13 @@ func MustNew(ctx context.Context, c *Config) RedisNodes {
 	return nodes
 }
 
-func NewNodes(ctx context.Context, c *Config) (RedisNodes, error) {
+func New(ctx context.Context, c *Config) (Nodes, error) {
 	addrs := strings.Split(c.Addr, ",")
 	if len(addrs) == 0 {
 		return nil, fmt.Errorf("empty redis addr")
 	}
 
-	nodes := make(RedisNodes, 0, len(addrs))
+	nodes := make(Nodes, 0, len(addrs))
 	for _, addr := range addrs {
 		if addr == "" {
 			continue
@@ -61,12 +61,16 @@ func NewNodes(ctx context.Context, c *Config) (RedisNodes, error) {
 			return nil, fmt.Errorf("redis connect addr %s err: %s", addr, ping.Err())
 		}
 
-		nodes = append(nodes, RedisNode{cli})
+		nodes = append(nodes, Node{cli})
 	}
 
 	return nodes, nil
 }
 
-func (node RedisNode) Locker(key cache.Key, ttl time.Duration) *RedisLock {
+func (nodes Nodes) Get() Node {
+	return RoundRobin(nodes)
+}
+
+func (node Node) Locker(key cache.Key, ttl time.Duration) *RedisLock {
 	return NewRedisLock(node.Client, key.String(), SetLockExpire(uint32(ttl.Seconds())))
 }

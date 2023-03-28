@@ -8,7 +8,7 @@ var (
 	roundRobinCount uint64
 )
 
-func RoundRobin(clients []RedisNode) RedisNode {
+func RoundRobin(clients []Node) Node {
 	i := (roundRobinCount) % uint64(len(clients))
 	atomic.AddUint64(&roundRobinCount, 1)
 

@@ -10,7 +10,7 @@ import (
 
 type (
 	RedisCache[T any] struct {
-		node RedisNode
+		node Node
 	}
 )
 
@@ -51,7 +51,7 @@ func (r RedisCache[T]) Set(ctx context.Context, key cache.Key, val T, ttl time.D
 	return r.node.Client.Set(ctx, key.String(), res, ttl).Err()
 }
 
-func Cache[T any](node RedisNode) cache.Cache[T] {
+func Cache[T any](node Node) cache.Cache[T] {
 	return RedisCache[T]{
 		node: node,
 	}
